@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테트리스 게임</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #game-board {
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1 / 2;
+            border: 1px solid #444;
+            position: relative;
+            background-color: #222;
+        }
+        .tetromino {
+            position: absolute;
+            width: 10%;
+            height: 5%;
+            transition: all 0.5s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-sizing: border-box;
+        }
+        .explode {
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .control-btn {
+            background-color: #444;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>테트리스 게임</h1>
+    <div id="game-board"></div>
+    <div id="controls">
+        <button class="control-btn" id="left-btn">←</button>
+        <button class="control-btn" id="down-btn">↓</button>
+        <button class="control-btn" id="right-btn">→</button>
+        <button class="control-btn" id="rotate-btn">회전</button>
+    </div>
+    <script>
+        const gameBoard = document.getElementById('game-board');
+        const ROWS = 20;
+        const COLS = 10;
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        
+        const SHAPES = [
+            [[1,1,1,1]],
+            [[1,1],[1,1]],
+            [[1,1,1],[0,1,0]],
+            [[1,1,1],[1,0,0]],
+            [[1,1,1],[0,0,1]],
+            [[1,1,0],[0,1,1]],
+            [[0,1,1],[1,1,0]]
+        ];
+        
+        const COLORS = ['#00FFFF', '#FFFF00', '#800080', '#0000FF', '#FFA500', '#008000', '#FF0000'];
+        
+        let currentShape;
+        let currentX;
+        let currentY;
+        let currentColor;
+        
+        function newShape() {
+            const shapeIndex = Math.floor(Math.random() * SHAPES.length);
+            currentShape = SHAPES[shapeIndex];
+            currentColor = COLORS[shapeIndex];
+            currentX = Math.floor(COLS / 2) - Math.floor(currentShape[0].length / 2);
+            currentY = 0;
+            if (collision()) {
+                alert('게임 오버!');
+                board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            }
+        }
+        
+        function draw() {
+            gameBoard.innerHTML = '';
+            const blockWidth = gameBoard.clientWidth / COLS;
+            const blockHeight = gameBoard.clientHeight / ROWS;
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (board[y][x]) {
+                        const block = document.createElement('div');
+                        block.className = 'tetromino';
+                        block.style.left = x * blockWidth + 'px';
+                        block.style.top = y * blockHeight + 'px';
+                        block.style.width = blockWidth + 'px';
+                        block.style.height = blockHeight + 'px';
+                        block.style.backgroundColor = board[y][x];
+                        gameBoard.appendChild(block);
+                    }
+                }
+            }
+            
+            for (let y = 0; y < currentShape.length; y++) {
+                for (let x = 0; x < currentShape[y].length; x++) {
+                    if (currentShape[y][x]) {
+                        const block = document.createElement('div');
+                        block.className = 'tetromino';
+                        block.style.left = (currentX + x) * blockWidth + 'px';
+                        block.style.top = (currentY + y) * blockHeight + 'px';
+                        block.style.width = blockWidth + 'px';
+                        block.style.height = blockHeight + 'px';
+                        block.style.backgroundColor = currentColor;
+                        gameBoard.appendChild(block);
+                    }
+                }
+            }
+        }
+        
+        function collision() {
+            for (let y = 0; y < currentShape.length; y++) {
+                for (let x = 0; x < currentShape[y].length; x++) {
+                    if (currentShape[y][x]) {
+                        if (currentY + y >= ROWS || currentX + x < 0 || currentX + x >= COLS || (currentY + y >= 0 && board[currentY + y][currentX + x])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        function merge() {
+            for (let y = 0; y < currentShape.length; y++) {
+                for (let x = 0; x < currentShape[y].length; x++) {
+                    if (currentShape[y][x]) {
+                        board[currentY + y][currentX + x] = currentColor;
+                    }
+                }
+            }
+        }
+        
+        function clearLines() {
+            for (let y = ROWS - 1; y >= 0; y--) {
+                if (board[y].every(cell => cell !== 0)) {
+                    const blocks = gameBoard.querySelectorAll('.tetromino');
+                    blocks.forEach(block => {
+                        const blockY = parseInt(block.style.top) / (gameBoard.clientHeight / ROWS);
+                        if (blockY === y) {
+                            block.classList.add('explode');
+                        }
+                    });
+                    
+                    setTimeout(() => {
+                        board.splice(y, 1);
+                        board.unshift(Array(COLS).fill(0));
+                        draw();
+                    }, 1000);
+                    
+                    return;
+                }
+            }
+        }
+        
+        function moveDown() {
+            currentY++;
+            if (collision()) {
+                currentY--;
+                merge();
+                clearLines();
+                newShape();
+            }
+            draw();
+        }
+        
+        function moveLeft() {
+            currentX--;
+            if (collision()) {
+                currentX++;
+            }
+            draw();
+        }
+        
+        function moveRight() {
+            currentX++;
+            if (collision()) {
+                currentX--;
+            }
+            draw();
+        }
+        
+        function rotate() {
+            const rotated = currentShape[0].map((_, index) =>
+                currentShape.map(row => row[index]).reverse()
+            );
+            const prevShape = currentShape;
+            currentShape = rotated;
+            if (collision()) {
+                currentShape = prevShape;
+            }
+            draw();
+        }
+        
+        document.addEventListener('keydown', event => {
+            if (event.key === 'ArrowLeft') moveLeft();
+            if (event.key === 'ArrowRight') moveRight();
+            if (event.key === 'ArrowDown') moveDown();
+            if (event.key === 'ArrowUp') rotate();
+        });
+        
+        document.getElementById('left-btn').addEventListener('click', moveLeft);
+        document.getElementById('right-btn').addEventListener('click', moveRight);
+        document.getElementById('down-btn').addEventListener('click', moveDown);
+        document.getElementById('rotate-btn').addEventListener('click', rotate);
+        
+        window.addEventListener('resize', draw);
+        
+        newShape();
+        draw();
+        setInterval(moveDown, 1000);
+    </script>
+</body>
+</html>
