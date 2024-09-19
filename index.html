@@ -34,7 +34,11 @@
         }
         .explode {
             opacity: 0;
-            transition: opacity 1s ease-out;
+            transform: scale(1.2) rotate(15deg);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .fade-out {
+            transition: opacity 0.5s ease-out;
         }
         #controls {
             margin-top: 20px;
@@ -51,10 +55,15 @@
             cursor: pointer;
             font-size: 18px;
         }
+        #score {
+            font-size: 24px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>테트리스 게임</h1>
+    <div id="score">점수: 0</div>
     <div id="game-board"></div>
     <div id="controls">
         <button class="control-btn" id="left-btn">←</button>
@@ -64,9 +73,11 @@
     </div>
     <script>
         const gameBoard = document.getElementById('game-board');
+        const scoreElement = document.getElementById('score');
         const ROWS = 20;
         const COLS = 10;
         let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let score = 0;
         
         const SHAPES = [
             [[1,1,1,1]],
@@ -94,6 +105,8 @@
             if (collision()) {
                 alert('게임 오버!');
                 board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+                score = 0;
+                updateScore();
             }
         }
         
@@ -156,13 +169,22 @@
         }
         
         function clearLines() {
+            let linesCleared = 0;
             for (let y = ROWS - 1; y >= 0; y--) {
                 if (board[y].every(cell => cell !== 0)) {
                     const blocks = gameBoard.querySelectorAll('.tetromino');
                     blocks.forEach(block => {
                         const blockY = parseInt(block.style.top) / (gameBoard.clientHeight / ROWS);
                         if (blockY === y) {
-                            block.classList.add('explode');
+                            block.classList.add('fade-out');
+                            let opacity = 1;
+                            const fadeInterval = setInterval(() => {
+                                opacity -= 0.1;
+                                block.style.opacity = opacity;
+                                if (opacity <= 0) {
+                                    clearInterval(fadeInterval);
+                                }
+                            }, 50);
                         }
                     });
                     
@@ -170,11 +192,19 @@
                         board.splice(y, 1);
                         board.unshift(Array(COLS).fill(0));
                         draw();
-                    }, 1000);
+                    }, 500);
                     
-                    return;
+                    linesCleared++;
                 }
             }
+            if (linesCleared > 0) {
+                score += linesCleared * 1;
+                updateScore();
+            }
+        }
+        
+        function updateScore() {
+            scoreElement.textContent = `점수: ${score}`;
         }
         
         function moveDown() {
