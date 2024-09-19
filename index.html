@@ -20,11 +20,12 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            overflow: hidden; /* 스크롤바 제거 */
+            overflow: hidden;
         }
         #header {
             text-align: center;
             padding: 5px 0;
+            width: 100%;
         }
         #game-container {
             display: flex;
@@ -33,10 +34,12 @@
             justify-content: center;
             flex-grow: 1;
             width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
         }
         #game-board {
-            width: 70%;
-            max-width: 210px;
+            width: 100%;
+            max-width: 500px;
             aspect-ratio: 1 / 2;
             border: 1px solid #444;
             position: relative;
@@ -71,6 +74,7 @@
             border: none;
             padding: 10px 15px;
             margin: 5px;
+            margin-bottom: 40px;
             cursor: pointer;
             font-size: 18px;
             touch-action: manipulation;
@@ -271,7 +275,7 @@
         }
         
         let lastRotateTime = 0;
-        const rotateDelay = 200; // 회전 딜레이 (밀리초)
+        const rotateDelay = 200;
 
         document.addEventListener('keydown', event => {
             if (event.key === 'ArrowLeft') moveLeft();
@@ -313,19 +317,20 @@
         addContinuousButtonPress('right-btn', moveRight);
         addContinuousButtonPress('down-btn', moveDown);
         
-        // 회전 버튼은 연속 작동하지 않도록 수정
         document.getElementById('rotate-btn').addEventListener('click', rotate);
         
         function resizeGameBoard() {
             const gameContainer = document.getElementById('game-container');
-            const availableHeight = gameContainer.clientHeight * 0.8; // 80%로 줄임
+            const availableWidth = gameContainer.clientWidth * 0.9;
+            const availableHeight = window.innerHeight * 0.7;
             const aspectRatio = COLS / ROWS;
-            let newWidth = availableHeight * aspectRatio;
-            let newHeight = availableHeight;
+            
+            let newWidth = availableWidth;
+            let newHeight = newWidth / aspectRatio;
 
-            if (newWidth > gameContainer.clientWidth * 0.8) { // 80%로 줄임
-                newWidth = gameContainer.clientWidth * 0.8;
-                newHeight = newWidth / aspectRatio;
+            if (newHeight > availableHeight) {
+                newHeight = availableHeight;
+                newWidth = newHeight * aspectRatio;
             }
 
             gameBoard.style.width = `${newWidth}px`;
