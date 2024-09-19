@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>미르소 테트리스!</title>
+    <title>미르소 테트리스!!</title>
     <style>
         body {
             background-color: #1a1a1a;
@@ -24,7 +24,7 @@
         }
         #header {
             text-align: center;
-            padding: 10px 0;
+            padding: 5px 0;
         }
         #game-container {
             display: flex;
@@ -318,13 +318,13 @@
         
         function resizeGameBoard() {
             const gameContainer = document.getElementById('game-container');
-            const availableHeight = gameContainer.clientHeight;
+            const availableHeight = gameContainer.clientHeight * 0.8; // 80%로 줄임
             const aspectRatio = COLS / ROWS;
             let newWidth = availableHeight * aspectRatio;
             let newHeight = availableHeight;
 
-            if (newWidth > gameContainer.clientWidth) {
-                newWidth = gameContainer.clientWidth;
+            if (newWidth > gameContainer.clientWidth * 0.8) { // 80%로 줄임
+                newWidth = gameContainer.clientWidth * 0.8;
                 newHeight = newWidth / aspectRatio;
             }
 
