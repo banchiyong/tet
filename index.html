@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>테트리스 게임</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>미르소 테트리스</title>
     <style>
         body {
             background-color: #1a1a1a;
@@ -11,14 +11,31 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             min-height: 100vh;
             margin: 0;
             font-family: Arial, sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        #header {
+            text-align: center;
+            padding: 10px 0;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            width: 100%;
         }
         #game-board {
-            width: 80%;
-            max-width: 240px;
+            width: 70%;
+            max-width: 210px;
             aspect-ratio: 1 / 2;
             border: 1px solid #444;
             position: relative;
@@ -41,10 +58,11 @@
             transition: opacity 0.5s ease-out;
         }
         #controls {
-            margin-top: 20px;
+            width: 100%;
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
+            padding: 20px 0;
         }
         .control-btn {
             background-color: #444;
@@ -54,21 +72,22 @@
             margin: 5px;
             cursor: pointer;
             font-size: 18px;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
+            touch-action: manipulation;
         }
         #score {
-            font-size: 24px;
-            margin-top: 20px;
+            font-size: 15px;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>테트리스 게임</h1>
-    <div id="score">점수: 0</div>
-    <div id="game-board"></div>
+    <div id="header">
+        <h2>미르소 테트리스</h2>
+        <div id="score">점수: 0</div>
+    </div>
+    <div id="game-container">
+        <div id="game-board"></div>
+    </div>
     <div id="controls">
         <button class="control-btn" id="left-btn">←</button>
         <button class="control-btn" id="down-btn">↓</button>
@@ -250,22 +269,73 @@
             draw();
         }
         
+        let lastRotateTime = 0;
+        const rotateDelay = 200; // 회전 딜레이 (밀리초)
+
         document.addEventListener('keydown', event => {
             if (event.key === 'ArrowLeft') moveLeft();
             if (event.key === 'ArrowRight') moveRight();
             if (event.key === 'ArrowDown') moveDown();
-            if (event.key === 'ArrowUp') rotate();
+            if (event.key === 'ArrowUp') {
+                const currentTime = Date.now();
+                if (currentTime - lastRotateTime > rotateDelay) {
+                    rotate();
+                    lastRotateTime = currentTime;
+                }
+            }
         });
         
-        document.getElementById('left-btn').addEventListener('click', moveLeft);
-        document.getElementById('right-btn').addEventListener('click', moveRight);
-        document.getElementById('down-btn').addEventListener('click', moveDown);
+        function addContinuousButtonPress(buttonId, action) {
+            let intervalId = null;
+            const button = document.getElementById(buttonId);
+            button.addEventListener('mousedown', () => {
+                action();
+                intervalId = setInterval(action, 100);
+            });
+            button.addEventListener('mouseup', () => {
+                clearInterval(intervalId);
+            });
+            button.addEventListener('mouseleave', () => {
+                clearInterval(intervalId);
+            });
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                action();
+                intervalId = setInterval(action, 100);
+            });
+            button.addEventListener('touchend', () => {
+                clearInterval(intervalId);
+            });
+        }
+        
+        addContinuousButtonPress('left-btn', moveLeft);
+        addContinuousButtonPress('right-btn', moveRight);
+        addContinuousButtonPress('down-btn', moveDown);
+        
+        // 회전 버튼은 연속 작동하지 않도록 수정
         document.getElementById('rotate-btn').addEventListener('click', rotate);
         
-        window.addEventListener('resize', draw);
+        function resizeGameBoard() {
+            const gameContainer = document.getElementById('game-container');
+            const availableHeight = gameContainer.clientHeight;
+            const aspectRatio = COLS / ROWS;
+            let newWidth = availableHeight * aspectRatio;
+            let newHeight = availableHeight;
+
+            if (newWidth > gameContainer.clientWidth) {
+                newWidth = gameContainer.clientWidth;
+                newHeight = newWidth / aspectRatio;
+            }
+
+            gameBoard.style.width = `${newWidth}px`;
+            gameBoard.style.height = `${newHeight}px`;
+            draw();
+        }
+
+        window.addEventListener('resize', resizeGameBoard);
         
         newShape();
-        draw();
+        resizeGameBoard();
         setInterval(moveDown, 1000);
     </script>
 </body>
